@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GP AUTO - Panel Administration</title>
+    <link rel="stylesheet" href="styles/admin.css">
+    <link rel="icon" href="imgs/logo.png" type="image/png">
+</head>
+<body>
+    <!-- Header Admin -->
+    <header class="admin-header">
+        <div class="admin-logo">
+            <img src="imgs/logo.png" alt="GP AUTO Logo">
+            <h1>GP AUTO - Administration</h1>
+        </div>
+        <div class="admin-user">
+            <span class="user-status">
+                <span class="status-indicator online"></span>
+                Admin connecté
+            </span>
+            <button class="btn btn-secondary" onclick="logout()">Déconnexion</button>
+        </div>
+    </header>
+
+    <!-- Navigation Admin -->
+    <nav class="admin-nav">
+        <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <svg class="nav-icon"><!-- Dashboard Icon --></svg>
+            Tableau de Bord
+        </button>
+        <button class="nav-btn" data-tab="vehicles" onclick="switchTab('vehicles')">
+            <svg class="nav-icon"><!-- Vehicle Icon --></svg>
+            Véhicules
+        </button>
+        <button class="nav-btn" data-tab="parts" onclick="switchTab('parts')">
+            <svg class="nav-icon"><!-- Parts Icon --></svg>
+            Pièces
+        </button>
+        <button class="nav-btn" data-tab="orders" onclick="switchTab('orders')">
+            <svg class="nav-icon"><!-- Orders Icon --></svg>
+            Commandes
+        </button>
+        <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">
+            <svg class="nav-icon"><!-- Settings Icon --></svg>
+            Configuration
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Dashboard -->
+        <section id="dashboard" class="tab-content active">
+            <div class="tab-header">
+                <h2>Tableau de Bord</h2>
+                <button class="btn btn-primary" onclick="refreshStats()">🔄 Actualiser</button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🚗</div>
+                    <div class="stat-info">
+                        <h3 id="totalVehicles">-</h3>
+                        <p>Véhicules en base</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔧</div>
+                    <div class="stat-info">
+                        <h3 id="totalParts">-</h3>
+                        <p>Pièces au catalogue</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🛒</div>
+                    <div class="stat-info">
+                        <h3 id="totalOrders">-</h3>
+                        <p>Commandes reçues</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <h3 id="totalRevenue">-</h3>
+                        <p>Chiffre d'affaires</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3>Actions Rapides</h3>
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="addVehicle()">➕ Ajouter Véhicule</button>
+                    <button class="btn btn-success" onclick="addPart()">➕ Ajouter Pièce</button>
+                    <button class="btn btn-info" onclick="viewAllOrders()">👁️ Voir Commandes</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📊 Exporter Données</button>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="recent-section">
+                <h3>Commandes Récentes</h3>
+                <div id="recentOrders" class="recent-list">
+                    <div class="loading">Chargement des commandes...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Véhicules -->
+        <section id="vehicles" class="tab-content">
+            <div class="tab-header">
+                <h2>Gestion des Véhicules</h2>
+                <button class="btn btn-primary" onclick="addVehicle()">➕ Nouveau Véhicule</button>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                <input type="text" id="vehicleSearch" placeholder="Rechercher par marque ou modèle..." onkeyup="filterVehicles()">
+                <select id="brandFilter" onchange="filterVehicles()">
+                    <option value="">Toutes les marques</option>
+                </select>
+            </div>
+
+            <!-- Vehicles Table -->
+            <div class="data-table">
+                <table id="vehiclesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Marque</th>
+                            <th>Modèle</th>
+                            <th>Année</th>
+                            <th>Motorisations</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehiclesTableBody">
+                        <tr><td colspan="7" class="loading">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Pièces -->
+        <section id="parts" class="tab-content">
+            <div class="tab-header">
+                <h2>Gestion des Pièces</h2>
+                <button class="btn btn-primary" onclick="addPart()">➕ Nouvelle Pièce</button>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                <input type="text" id="partSearch" placeholder="Rechercher par nom, SKU ou référence OE..." onkeyup="filterParts()">
+                <select id="categoryFilter" onchange="filterParts()">
+                    <option value="">Toutes les catégories</option>
+                </select>
+                <select id="stockFilter" onchange="filterParts()">
+                    <option value="">Tous les stocks</option>
+                    <option value="in-stock">En stock</option>
+                    <option value="low-stock">Stock faible</option>
+                    <option value="out-of-stock">Rupture</option>
+                </select>
+            </div>
+
+            <!-- Parts Table -->
+            <div class="data-table">
+                <table id="partsTable">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>SKU</th>
+                            <th>Nom</th>
+                            <th>Catégorie</th>
+                            <th>Prix (TND)</th>
+                            <th>Stock</th>
+                            <th>Marque</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partsTableBody">
+                        <tr><td colspan="8" class="loading">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Commandes -->
+        <section id="orders" class="tab-content">
+            <div class="tab-header">
+                <h2>Gestion des Commandes</h2>
+                <button class="btn btn-secondary" onclick="exportOrders()">📄 Exporter</button>
+            </div>
+
+            <!-- Orders Filters -->
+            <div class="search-filters">
+                <select id="statusFilter" onchange="filterOrders()">
+                    <option value="">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="processing">En traitement</option>
+                    <option value="shipped">Expédié</option>
+                    <option value="delivered">Livré</option>
+                    <option value="cancelled">Annulé</option>
+                </select>
+                <input type="date" id="dateFilter" onchange="filterOrders()">
+            </div>
+
+            <!-- Orders Table -->
+            <div class="data-table">
+                <table id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>Commande #</th>
+                            <th>Client</th>
+                            <th>Téléphone</th>
+                            <th>Date</th>
+                            <th>Total (TND)</th>
+                            <th>Livraison</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <tr><td colspan="8" class="loading">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Configuration -->
+        <section id="settings" class="tab-content">
+            <div class="tab-header">
+                <h2>Configuration</h2>
+            </div>
+
+            <div class="settings-grid">
+                <!-- Livraison -->
+                <div class="settings-card">
+                    <h3>Configuration Livraison</h3>
+                    <div class="form-group">
+                        <label>Seuil livraison gratuite (TND)</label>
+                        <input type="number" id="freeDeliveryThreshold" value="200" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Frais de livraison (TND)</label>
+                        <input type="number" id="deliveryFee" value="5" min="0">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveDeliverySettings()">💾 Sauvegarder</button>
+                </div>
+
+                <!-- Site -->
+                <div class="settings-card">
+                    <h3>Configuration Site</h3>
+                    <div class="form-group">
+                        <label>Nom du site</label>
+                        <input type="text" id="siteName" value="GP AUTO - Général Pièces Autos">
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="text" id="sitePhone" value="+216 XX XXX XXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="siteEmail" value="contact@gp-auto.tn">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSiteSettings()">💾 Sauvegarder</button>
+                </div>
+
+                <!-- Maintenance -->
+                <div class="settings-card">
+                    <h3>Maintenance</h3>
+                    <div class="form-group">
+                        <label>Mode maintenance</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="maintenanceMode">
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-warning" onclick="clearCache()">🗑️ Vider le cache</button>
+                    <button class="btn btn-danger" onclick="resetDatabase()">🔄 Réinitialiser BD</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal pour Véhicules -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="vehicleModalTitle">Nouveau Véhicule</h3>
+                <span class="close" onclick="closeModal('vehicleModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="vehicleForm">
+                    <input type="hidden" id="vehicleId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Marque *</label>
+                            <div class="input-group">
+                                <select id="vehicleBrand" onchange="loadModelsForBrand()">
+                                    <option value="">Sélectionner ou créer</option>
+                                </select>
+                                <input type="text" id="vehicleBrandNew" placeholder="Nouvelle marque" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Modèle *</label>
+                            <div class="input-group">
+                                <select id="vehicleModel" onchange="loadEnginesForVehicle()">
+                                    <option value="">Sélectionner ou créer</option>
+                                </select>
+                                <input type="text" id="vehicleModelNew" placeholder="Nouveau modèle" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Année de début</label>
+                            <input type="number" id="vehicleYearFrom" min="1980" max="2030">
+                        </div>
+                        <div class="form-group">
+                            <label>Année de fin</label>
+                            <input type="number" id="vehicleYearTo" min="1980" max="2030">
+                        </div>
+                    </div>
+                    
+                    <!-- Motorisations multiples -->
+                    <div class="form-group">
+                        <label>Motorisations *</label>
+                        <div id="enginesContainer">
+                            <!-- Les motorisations seront ajoutées ici -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addEngineField()" style="margin-top: 10px;">
+                            ➕ Ajouter une motorisation
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('vehicleModal')">Annuler</button>
+                <button class="btn btn-primary" onclick="saveVehicle()">💾 Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour Pièces -->
+    <div id="partModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="partModalTitle">Nouvelle Pièce</h3>
+                <span class="close" onclick="closeModal('partModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="partForm">
+                    <input type="hidden" id="partId">
+                    <div class="form-group">
+                        <label>Nom de la pièce *</label>
+                        <input type="text" id="partName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>SKU (Référence article) *</label>
+                            <input type="text" id="partSku" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Catégorie *</label>
+                            <select id="partCategory" required>
+                                <option value="">Sélectionner</option>
+                                <option value="Freinage">Freinage</option>
+                                <option value="Filtration">Filtration</option>
+                                <option value="Allumage">Allumage</option>
+                                <option value="Suspension">Suspension</option>
+                                <option value="Électrique">Électrique</option>
+                                <option value="Carrosserie">Carrosserie</option>
+                                <option value="Pneumatiques">Pneumatiques</option>
+                                <option value="Moteur">Moteur</option>
+                                <option value="Transmission">Transmission</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Prix (TND) *</label>
+                            <input type="number" id="partPrice" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock *</label>
+                            <input type="number" id="partStock" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Marque</label>
+                            <input type="text" id="partBrand">
+                        </div>
+                        <div class="form-group">
+                            <label>URL Image</label>
+                            <input type="url" id="partImageUrl">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="partDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Références OE (séparées par des virgules)</label>
+                        <input type="text" id="partOeReferences" placeholder="ex: 1234567890,0987654321">
+                    </div>
+                    
+                    <!-- Section véhicules compatibles -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="showVehicleSelector" onchange="toggleVehicleSelector()">
+                            Véhicules compatibles
+                        </label>
+                        <div id="vehicleSelectorContainer" style="display: none; margin-top: 10px;">
+                            <div class="compatible-vehicles">
+                                <div id="vehicleList" class="vehicle-selector">
+                                    <!-- Liste des véhicules chargée dynamiquement -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('partModal')">Annuler</button>
+                <button class="btn btn-primary" onclick="savePart()">💾 Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour Commande -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Détails de la Commande #<span id="orderModalId"></span></h3>
+                <span class="close" onclick="closeModal('orderModal')">&times;</span>
+            </div>
+            <div class="modal-body" id="orderDetails">
+                <!-- Détails de la commande chargés dynamiquement -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('orderModal')">Fermer</button>
+                <button class="btn btn-success" onclick="updateOrderStatus('processing')">En traitement</button>
+                <button class="btn btn-info" onclick="updateOrderStatus('shipped')">Expédié</button>
+                <button class="btn btn-success" onclick="updateOrderStatus('delivered')">Livré</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span id="toastMessage">Message de notification</span>
+            <button class="toast-close" onclick="hideToast()">&times;</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/admin.js"></script>
+</body>
+</html>
